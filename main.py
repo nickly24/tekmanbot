@@ -291,6 +291,272 @@ def get_component_connectivity():
 
 
 
+# ... (предыдущий код остается без изменений) ...
+
+# Роуты для веб канбан-доски
+@app.route('/api/web_canban', methods=['GET'])
+def get_web_canban():
+    """Получить все задачи из веб канбан-доски"""
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM web_canban")
+        tasks = cursor.fetchall()
+        return jsonify(tasks)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/web_canban', methods=['POST'])
+def add_web_canban_task():
+    """Добавить новую задачу в веб канбан-доску"""
+    data = request.get_json()
+    if not data or 'task' not in data or 'description' not in data:
+        return jsonify({'error': 'Missing required fields (task, description)'}), 400
+    
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor()
+        query = """
+        INSERT INTO web_canban (task, description, status)
+        VALUES (%s, %s, %s)
+        """
+        cursor.execute(query, (
+            data['task'],
+            data['description'],
+            data.get('status', 'set')
+        ))
+        connection.commit()
+        
+        task_id = cursor.lastrowid
+        return jsonify({'message': 'Task added successfully', 'id': task_id}), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/web_canban/update', methods=['PUT'])
+def update_web_canban_task():
+    """Обновить задачу в веб канбан-доске"""
+    data = request.get_json()
+    if not data or 'id' not in data:
+        return jsonify({'error': 'Missing task id'}), 400
+    
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor()
+        
+        # Проверяем существование задачи
+        cursor.execute("SELECT id FROM web_canban WHERE id = %s", (data['id'],))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Task not found'}), 404
+        
+        # Формируем запрос для обновления
+        set_parts = []
+        params = []
+        
+        if 'task' in data:
+            set_parts.append("task = %s")
+            params.append(data['task'])
+        if 'description' in data:
+            set_parts.append("description = %s")
+            params.append(data['description'])
+        if 'status' in data:
+            set_parts.append("status = %s")
+            params.append(data['status'])
+        
+        if not set_parts:
+            return jsonify({'error': 'No fields to update'}), 400
+        
+        params.append(data['id'])
+        query = f"UPDATE web_canban SET {', '.join(set_parts)} WHERE id = %s"
+        cursor.execute(query, tuple(params))
+        connection.commit()
+        
+        return jsonify({'message': 'Task updated successfully'})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/web_canban/delete', methods=['DELETE'])
+def delete_web_canban_task():
+    """Удалить задачу из веб канбан-доски"""
+    data = request.get_json()
+    if not data or 'id' not in data:
+        return jsonify({'error': 'Missing task id'}), 400
+    
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM web_canban WHERE id = %s", (data['id'],))
+        connection.commit()
+        
+        if cursor.rowcount == 0:
+            return jsonify({'error': 'Task not found'}), 404
+            
+        return jsonify({'message': 'Task deleted successfully'})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+# Роуты для TSD Android канбан-доски
+@app.route('/api/tsd_android_canban', methods=['GET'])
+def get_tsd_android_canban():
+    """Получить все задачи из TSD Android канбан-доски"""
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM tsd_android_canban")
+        tasks = cursor.fetchall()
+        return jsonify(tasks)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/tsd_android_canban', methods=['POST'])
+def add_tsd_android_canban_task():
+    """Добавить новую задачу в TSD Android канбан-доску"""
+    data = request.get_json()
+    if not data or 'task' not in data or 'description' not in data:
+        return jsonify({'error': 'Missing required fields (task, description)'}), 400
+    
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor()
+        query = """
+        INSERT INTO tsd_android_canban (task, description, status)
+        VALUES (%s, %s, %s)
+        """
+        cursor.execute(query, (
+            data['task'],
+            data['description'],
+            data.get('status', 'set')
+        ))
+        connection.commit()
+        
+        task_id = cursor.lastrowid
+        return jsonify({'message': 'Task added successfully', 'id': task_id}), 201
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/tsd_android_canban/update', methods=['PUT'])
+def update_tsd_android_canban_task():
+    """Обновить задачу в TSD Android канбан-доске"""
+    data = request.get_json()
+    if not data or 'id' not in data:
+        return jsonify({'error': 'Missing task id'}), 400
+    
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor()
+        
+        # Проверяем существование задачи
+        cursor.execute("SELECT id FROM tsd_android_canban WHERE id = %s", (data['id'],))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Task not found'}), 404
+        
+        # Формируем запрос для обновления
+        set_parts = []
+        params = []
+        
+        if 'task' in data:
+            set_parts.append("task = %s")
+            params.append(data['task'])
+        if 'description' in data:
+            set_parts.append("description = %s")
+            params.append(data['description'])
+        if 'status' in data:
+            set_parts.append("status = %s")
+            params.append(data['status'])
+        
+        if not set_parts:
+            return jsonify({'error': 'No fields to update'}), 400
+        
+        params.append(data['id'])
+        query = f"UPDATE tsd_android_canban SET {', '.join(set_parts)} WHERE id = %s"
+        cursor.execute(query, tuple(params))
+        connection.commit()
+        
+        return jsonify({'message': 'Task updated successfully'})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/tsd_android_canban/delete', methods=['DELETE'])
+def delete_tsd_android_canban_task():
+    """Удалить задачу из TSD Android канбан-доски"""
+    data = request.get_json()
+    if not data or 'id' not in data:
+        return jsonify({'error': 'Missing task id'}), 400
+    
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM tsd_android_canban WHERE id = %s", (data['id'],))
+        connection.commit()
+        
+        if cursor.rowcount == 0:
+            return jsonify({'error': 'Task not found'}), 404
+            
+        return jsonify({'message': 'Task deleted successfully'})
+    except Error as e:
+        connection.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
 
 
 if __name__ == '__main__':
