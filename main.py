@@ -155,5 +155,143 @@ def add_fact():
             connection.close()
 
 
+
+# Новые роуты для инфраструктурных компонентов
+@app.route('/api/infrastructure/components', methods=['GET'])
+def get_infrastructure_components():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM infrastructure_components")
+        components = cursor.fetchall()
+        return jsonify(components)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/infrastructure/components/<int:component_id>', methods=['GET'])
+def get_component(component_id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM infrastructure_components WHERE id = %s", (component_id,))
+        component = cursor.fetchone()
+        if component:
+            return jsonify(component)
+        else:
+            return jsonify({'error': 'Component not found'}), 404
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+
+# Роуты для соединений между компонентами
+@app.route('/api/infrastructure/connections', methods=['GET'])
+def get_component_connections():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        query = """
+        SELECT cc.*, 
+               src.name as source_name, src.type as source_type,
+               tgt.name as target_name, tgt.type as target_type
+        FROM component_connections cc
+        JOIN infrastructure_components src ON cc.source_component_id = src.id
+        JOIN infrastructure_components tgt ON cc.target_component_id = tgt.id
+        """
+        cursor.execute(query)
+        connections = cursor.fetchall()
+        return jsonify(connections)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/infrastructure/connections/by_component/<int:component_id>', methods=['GET'])
+def get_connections_by_component(component_id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        query = """
+        SELECT cc.*, 
+               src.name as source_name, src.type as source_type,
+               tgt.name as target_name, tgt.type as target_type
+        FROM component_connections cc
+        JOIN infrastructure_components src ON cc.source_component_id = src.id
+        JOIN infrastructure_components tgt ON cc.target_component_id = tgt.id
+        WHERE cc.source_component_id = %s OR cc.target_component_id = %s
+        """
+        cursor.execute(query, (component_id, component_id))
+        connections = cursor.fetchall()
+        return jsonify(connections)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+# Роуты для представлений
+@app.route('/api/infrastructure/port_usage', methods=['GET'])
+def get_port_usage():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM port_usage")
+        port_usage = cursor.fetchall()
+        return jsonify(port_usage)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+@app.route('/api/infrastructure/component_connectivity', methods=['GET'])
+def get_component_connectivity():
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Database connection failed'}), 500
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM component_connectivity")
+        connectivity = cursor.fetchall()
+        return jsonify(connectivity)
+    except Error as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=80)
