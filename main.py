@@ -1,9 +1,16 @@
 from flask import Flask, jsonify, request
 import mysql.connector
 from mysql.connector import Error
-
+from flask_cors import CORS
 app = Flask(__name__)
-
+CORS(app, resources={
+    r"/*": {  # Обратите внимание на "/*" вместо "/api/*"
+        "origins": "*",  
+        "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
 # Конфигурация базы данных
 db_config = {
     'host': '147.45.138.77',
